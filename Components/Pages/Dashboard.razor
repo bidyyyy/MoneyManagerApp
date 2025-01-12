@@ -1,0 +1,15 @@
+﻿@page "/home"
+@using MoneyManager.Models
+@using MoneyManager.Services
+@inject AuthenticationStateService authStateService
+
+@if (authStateService.IsAuthenticated())
+{
+    
+    <h1>Hello, @authStateService.GetAuthenticatedUser().Name with the currency @authStateService.GetAuthenticatedUser().Currency</h1>
+
+
+    
+}
+
+

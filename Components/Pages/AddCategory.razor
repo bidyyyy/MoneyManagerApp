@@ -1,0 +1,85 @@
+﻿@page "/add-category"
+@using MoneyManager.Models
+@using MoneyManager.Services
+@inject ICategoryService categoryService
+
+<style>
+    button.btn-primary {
+        background-color: #ff69b4 !important; /* Ensure button stays pink */
+        border-color: #ff69b4 !important;
+    }
+
+        button.btn-primary:hover {
+            background-color: #ff4f94 !important; /* Darker pink for hover */
+            border-color: #ff4f94 !important;
+        }
+
+</style>
+<h3>Add category</h3>
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-4">
+            <form class="bg-light border rounded-3 shadow-sm p-4">
+                <div class="mb-3">
+                    <label for="categoryName" class="form-label fw-bold">Category Name</label>
+                    <input type="text" id="categoryName" class="form-control" @bind="newCategory.Name" placeholder="Enter category name" />
+                </div>
+
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <div class="alert alert-danger text-center">
+                        @errorMessage
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(successMessage))
+                {
+                    <div class="alert alert-success text-center">
+                        @successMessage
+                    </div>
+                }
+
+                <button type="button" class="btn btn-primary w-100 mt-3" @onclick="SubmitCategory">Add Category</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+@code {
+    private Category newCategory = new Category();
+    private string errorMessage;
+    private string successMessage;
+
+    private async Task SubmitCategory()
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(newCategory.Name))
+            {
+                errorMessage = "Category name cannot be empty.";
+                successMessage = null;
+                return;
+            }
+            var existingCategories = await categoryService.LoadCategoriesAsync();
+            if (existingCategories.Any(c => c.Name.Equals(newCategory.Name, StringComparison.OrdinalIgnoreCase)))
+            {
+                errorMessage = "Category already exists.";
+                successMessage = null;
+                return;
+            }
+
+
+            await categoryService.SaveCategoryAsync(newCategory);
+
+            newCategory = new Category();
+            successMessage = "Category added successfully.";
+            errorMessage = null;
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Failed to add category.";
+            successMessage = null;
+            Console.WriteLine(ex.Message);
+        }
+    }
+
+}

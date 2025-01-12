@@ -1,0 +1,114 @@
+﻿@page "/register"
+@using MoneyManager.Models
+@using MoneyManager.Services
+@inject NavigationManager navigationManager
+@inject IUserService userService
+<h3>Register</h3>
+
+
+<div>
+    <form>
+        
+        <div>
+            <label>User Name:</label>
+            <input type="text" @bind="newUser.UserName" />
+        </div>
+        <div>
+            <label>Password:</label>
+            <input type="password" @bind="newUser.Password" />
+        </div>
+        
+        <div>
+            <label>Name:</label>
+            <input type="text" @bind="newUser.Name" />
+        </div>
+      
+        
+        <div>
+            <label>Phone:</label>
+            <input type="tel"
+                
+                @bind="newUser.Phone" />
+            
+        </div>
+        <button type="button" @onclick="AddNewUser">Register</button>
+    </form>
+    <p>
+        Already have an account?
+        <a href="/">Sign In</a>
+    </p>
+</div>
+
+@if (errorMessage != null)
+{
+    <p class="error-message">@errorMessage</p>
+}
+
+
+
+@if (retrievedUser != null)
+{
+    <h4>User Details:</h4>
+    <p><strong>Name:</strong> @retrievedUser.Name</p>
+    <p><strong>Phone:</strong> @retrievedUser.Phone</p>
+}
+
+@code {
+    private User newUser = new User(); //obj created for User Class
+    private string errorMessage;
+
+    // New field for searching user
+    private String searchUserName;
+
+    // Field to hold retrieved user information
+    private User retrievedUser;
+
+    private async Task AddNewUser()
+    {
+        try
+        {
+            var existingUsers = await userService.LoadUsersAsync();
+            // condition chek
+
+            // checking if UserName is unique
+            if (existingUsers.Any(u => u.UserName == newUser.UserName)){
+                errorMessage = "User Name must be unique. This user name already exist.";
+                return;
+            }
+            //Save the new user
+            await userService.SaveUserAsync(newUser);
+            // Reset the new user object after saving.
+            newUser = new User();
+            errorMessage = null; // Clear any previous error messages
+            navigationManager.NavigateTo("/");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Fill the form.";
+            Console.WriteLine(errorMessage); // Log for debugging
+        }
+    }
+
+    private async Task GetUserInfo()
+    {
+        try
+        {
+            var users = await userService.LoadUsersAsync();
+            retrievedUser = users.FirstOrDefault(u => u.UserName == searchUserName);
+
+            if (retrievedUser == null)
+            {
+                errorMessage = "No user found with this User Name.";
+            }
+            else
+            {
+                errorMessage = null; // Clear any previous error messages
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"An error occurred while retrieving the user: {ex.Message}";
+            Console.WriteLine(errorMessage); // Log for debugging
+        }
+    }
+}

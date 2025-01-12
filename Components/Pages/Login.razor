@@ -1,0 +1,177 @@
+﻿@page "/"
+@using MoneyManager.Models
+@using MoneyManager.Services
+@inject AuthenticationStateService authStateService
+@inject NavigationManager navigationManager
+@inject IUserService userService
+
+<style>
+    /* Global Styles */
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f4;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+    }
+
+    /* Login Form Container */
+    form {
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        width: 100%;
+        max-width: 400px;
+    }
+
+    /* Form Heading */
+    h3 {
+        text-align: center;
+        margin-bottom: 20px;
+        font-size: 24px;
+        color: #333;
+    }
+
+    /* Input Fields */
+    input[type="text"],
+    input[type="password"],
+    select {
+        width: 100%;
+        padding: 10px;
+        margin: 10px 0;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 16px;
+    }
+
+    /* Button */
+    button {
+        width: 100%;
+        padding: 10px;
+        background-color: hotpink;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        font-size: 16px;
+        cursor: pointer;
+    }
+
+        button:hover {
+            background-color: grey;
+        }
+
+    /* Link */
+    a {
+        text-decoration: none;
+        color: #007bff;
+    }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+    /* Error Message */
+    .error-message {
+        color: red;
+        text-align: center;
+        margin-top: 10px;
+    }
+
+</style>
+
+<h3>Login</h3>
+
+<div>
+    <form>
+        <div>
+            <label>Username:</label>
+            <input type="text" @bind="username" />
+        </div>
+        <div>
+            <label>Password:</label>
+            <input type="password" @bind="password" />
+        </div>
+        <div>
+            <label>Currency:</label>
+            <select @bind="selectedCurrency">
+                @foreach (var currency in currencyOptions)
+                {
+                    <option value="@currency">@currency</option>
+                }
+            </select>
+        </div>
+        <button type="button" @onclick="LoginUser">Login</button>
+    </form>
+    <p>
+        Don't have an account?
+        <a href="/register">Sign Up</a>
+    </p>
+</div>
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <p class="error-message">@errorMessage</p>
+}
+
+@code {
+    private string username;
+    private string password;
+    private string errorMessage;
+    private string selectedCurrency;
+
+    private List<string> currencyOptions = new List<string>
+    {
+        "USD",
+        "NPR",
+        "EUR",
+        "GBP",
+        "JPY",
+        "INR"
+    };
+
+    private async Task LoginUser()
+    {
+        try
+        {
+            var users = await userService.LoadUsersAsync();
+            var user = users.FirstOrDefault(u => u.UserName == username && u.Password == HashPassword(password));
+
+            if (user != null)
+            {
+                // Update the user's currency
+                user.Currency = selectedCurrency;
+
+                // Save updated user information
+                await userService.SaveUserAsync(user);
+
+                // Set the authenticated user in state management
+                authStateService.SetAuthenticatedUser(user);
+
+                // Redirect to the dashboard or home page
+                navigationManager.NavigateTo("/home");
+            }
+            else
+            {
+                errorMessage = "Invalid username or password.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"An error occurred during login: {ex.Message}";
+        }
+    }
+
+    private string HashPassword(string password)
+    {
+        using (var sha256 = System.Security.Cryptography.SHA256.Create())
+        {
+            var bytes = System.Text.Encoding.UTF8.GetBytes(password);
+            var hash = sha256.ComputeHash(bytes);
+            return Convert.ToBase64String(hash);
+        }
+    }
+}

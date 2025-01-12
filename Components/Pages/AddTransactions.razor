@@ -1,0 +1,277 @@
+﻿@page "/add-transactions"
+@using MoneyManager.Models
+@using MoneyManager.Services
+@inject ITransactionService transactionService
+@inject AuthenticationStateService authStateService
+@inject ICategoryService categoryService
+
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #f8f9fa;
+        margin: 0;
+        padding: 0;
+    }
+
+    h3 {
+        text-align: center;
+        margin-top: 0px;
+        color: #333;
+    }
+
+    form {
+        max-width: 600px;
+        margin: 0px auto;
+        padding: 10px;
+        background-color: #ffffff;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        
+    }
+
+    label {
+        display: block;
+        font-weight: bold;
+        margin-bottom: 8px;
+        color: #555;
+    }
+
+    input,
+    select,
+    textarea {
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 15px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 14px;
+    }
+
+        input[type="radio"] {
+            margin-right: 8px;
+        }
+
+    .radio-group {
+        display: flex;
+        gap: 15px;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 5px;
+    }
+    textarea {
+        resize: none;
+    }
+
+    button {
+        width: 20%;
+        margin-left: 245px;
+        margin-right:80px;
+        padding: 10px;
+        background-color: hotpink;
+        color: #fff;
+        border: none;
+        border-radius: 4px;
+        font-size: 16px;
+        cursor: pointer;
+        
+    }
+
+        button:hover {
+            background-color: lightgrey;
+        }
+
+    div {
+        margin-bottom: 15px;
+    }
+
+    .error-message {
+        color: #d9534f;
+        font-size: 14px;
+        margin-top: 10px;
+    }
+
+    .success-message {
+        color: #5cb85c;
+        font-size: 14px;
+        margin-top: 10px;
+    }
+
+    /* Focus styles */
+    input:focus,
+    select:focus,
+    textarea:focus {
+        outline: none;
+        border-color: #007bff;
+        box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+    }
+</style>
+
+
+
+<h3>Add Transaction</h3>
+
+<form>
+    <div>
+        <label for="title" class="fw-bold">Title</label>
+        <input type="text" id="title" @bind="newItem.Title" placeholder="Enter title" />
+    </div>
+
+    <div>
+        <label for="amount" class="fw-bold">Amount</label>
+        <input type="number"
+               id="amount"
+               placeholder="Amount"
+               @bind="newItem.Amount"
+               style="padding-left: 30px; width: 100%;" />
+    </div>
+
+    <div>
+        <label for="date" class="fw-bold">Date</label>
+        <input type="date" id="date" @bind="newItem.Date" />
+    </div>
+
+    <div>
+        <label for="tag" class="fw-bold">Category</label>
+        <select id="tag" @bind="newItem.Tag">
+            @foreach (var category in categories)
+            {
+            <option value="@category.Name">@category.Name</option>
+            }
+            
+        </select>
+
+        
+    </div>
+
+    <div>
+        <label for="note" class="fw-bold">Note</label>
+        <textarea id="note" rows="3" @bind="newItem.Description" placeholder="Enter note (optional)"></textarea>
+    </div>
+
+
+    <div>
+        <label class="fw-bold">Type</label>
+        <div class="radio-group">
+            <div>
+                <input type="radio" id="inflow" name="type" value="Inflow" @onchange="e => newItem.Type = e.Value.ToString()" />
+                <label for="inflow">Inflow</label>
+            </div>
+            <div>
+                <input type="radio" id="outflow" name="type" value="Outflow" @onchange="e => newItem.Type = e.Value.ToString()" />
+                <label for="outflow">Outflow</label>
+            </div>
+            <div>
+                <input type="radio" id="debt" name="type" value="Debt" @onchange="e => newItem.Type = e.Value.ToString()" />
+                <label for="debt">Debt</label>
+            </div>
+        </div>
+    </div>
+
+
+    @if (newItem.Type == "Debt")
+    {
+        <div>
+            <label for="dueDate" class="fw-bold">Due Date</label>
+            <input type="date" id="dueDate" @bind="newItem.DueDate" />
+        </div>
+
+        <div>
+            <label for="source" class="fw-bold">Source</label>
+            <input type="text" id="source" @bind="newItem.Source" placeholder="Enter source of debt" />
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div>
+            @errorMessage
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(successMessage))
+    {
+        <div>
+            @successMessage
+        </div>
+    }
+
+    <button type="button" @onclick="AddNewTask">Add</button>
+</form>
+
+@code {
+    private Transaction newItem = new Transaction { Date = DateTime.Today };
+    private List<Category> categories = new List<Category>();
+    private string errorMessage;
+    private string successMessage;
+    private decimal totalBalance = 0;
+
+    
+
+    protected override async Task OnInitializedAsync()
+    {
+        categories = await categoryService.LoadCategoriesAsync();
+        if (authStateService.IsAuthenticated())
+        {
+            var transactions = await transactionService.LoadTransactionAsync();
+
+            var totalInflow = transactions.Where(t => t.Type == "Inflow").Sum(t => t.Amount);
+            var totalOutflow = transactions.Where(t => t.Type == "Outflow").Sum(t => t.Amount);
+            var totalDebt = transactions.Where(t => t.Type == "Debt").Sum(t => t.Amount);
+            var clearedDebt = transactions.Where(t => t.Type == "Debt" && t.IsPaid).Sum(t => t.Amount);
+            var pendingDebt = totalDebt - clearedDebt;
+            totalBalance = totalInflow + pendingDebt - totalOutflow;
+        }
+    }
+
+    private async Task AddNewTask()
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(newItem.Title) || newItem.Amount <= 0)
+            {
+                errorMessage = "Title and valid amount are required.";
+                successMessage = null;
+                return;
+            }
+
+            if (newItem.Type == "Outflow" && newItem.Amount > totalBalance)
+            {
+                errorMessage = "The Outflow amount cannot exceed the total balance.";
+                successMessage = null;
+                return;
+            }
+
+            if (newItem.Type == "Debt")
+            {
+                if (!newItem.DueDate.HasValue || string.IsNullOrWhiteSpace(newItem.Source))
+                {
+                    errorMessage = "Please provide both Due Date and Source for Debt.";
+                    successMessage = null;
+                    return;
+                }
+
+                // Check if Due Date is before Transaction Date
+                if (newItem.DueDate.Value < newItem.Date)
+                {
+                    errorMessage = "Due Date cannot be earlier than the Transaction Date.";
+                    successMessage = null;
+                    return;
+                }
+            }
+
+            newItem.TaskId = Guid.NewGuid();
+
+            await transactionService.SaveTransactionAsync(newItem);
+
+            newItem = new Transaction { Date = DateTime.Today };
+            successMessage = "Transaction added successfully!";
+            errorMessage = null;
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"An error occurred: {ex.Message}";
+        }
+    }   
+
+}
+
