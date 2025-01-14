@@ -22,5 +22,6 @@ namespace MoneyManager.Models
         public DateTime? DueDate { get; set; }
         public String Source { get; set; } = string.Empty;
         public bool IsPaid { get; set; } = false; 
+
     }
 }
