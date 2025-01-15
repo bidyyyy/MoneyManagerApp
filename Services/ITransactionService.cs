@@ -12,8 +12,10 @@ namespace MoneyManager.Services
 
         Task SaveTransactionAsync(Transaction transactionItem);
         Task UpdateTransactionAsync(Transaction transactionItem);
-        Task DeleteTransactionAsync(Guid transId);
-        //Task MarkAsDoneAsync(Guid transId);
+
+        Task DeleteTransactionAsync(Guid transactionId);
+
+
         Task<List<Transaction>> LoadTransactionAsync();
     }
 }

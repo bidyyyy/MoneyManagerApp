@@ -174,6 +174,7 @@
             <th>Date</th>
             <th>Category</th>
             <th>Note</th>
+            <th>Action</th>
             @if (currentFilter == 2)
             {
                 <th>Source</th>
@@ -211,6 +212,11 @@
                             }
                         </td>
                     }
+                    <td>
+
+                        <button @onclick="() => DeleteTransaction(transaction.TaskId)">Delete</button>
+                    </td>
+
                 </tr>
             }
         }
@@ -330,7 +336,7 @@
         try
         {
             await transactionService.UpdateTransactionAsync(transaction);
-            alertMessage = "Debt marked as paid successfully!";
+            alertMessage = "Debt marked as paid";
             ApplyFilters();
         }
         catch (Exception ex)
@@ -347,5 +353,19 @@
         paidDebt = filteredTransaction.Where(t => t.Type == "Debt" && t.IsPaid).Sum(t => t.Amount);
         remainingDebt = totalDebt - paidDebt;
 
+    }
+
+    private async Task DeleteTransaction(Guid transactionId)
+    {
+        try
+        {
+            await transactionService.DeleteTransactionAsync(transactionId);
+            alertMessage = "Transaction was sucessfully deleted";
+            await LoadTransaction(); // Reload transactions to reflect changes
+        }
+        catch (Exception ex)
+        {
+            alertMessage = $"Error deleting transaction: {ex.Message}";
+        }
     }
 }

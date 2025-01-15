@@ -83,13 +83,13 @@ namespace MoneyManager.Services
             }
         }
 
-        public async Task DeleteTransactionAsync(Guid taskId)
+        private async Task SaveTransactionAsync(List<Transaction> transactions)
         {
             try
             {
-                var transactions = await LoadTransactionAsync();
-                transactions.RemoveAll(t => t.TaskId == taskId);
-                await SaveTransactionAsync(transactions);
+                var json = JsonSerializer.Serialize(transactions, new JsonSerializerOptions { WriteIndented = true });
+
+                await File.WriteAllTextAsync(filePath, json);
             }
             catch (Exception ex)
             {
@@ -98,38 +98,18 @@ namespace MoneyManager.Services
             }
         }
 
-        /* public async Task MarkAsDoneAsync(Guid taskId)
-         {
-             try
-             {
-                 var transactions = await LoadTransactionAsync();
-                 var task = transactions.FirstOrDefault(t => t.TaskId == taskId);
-
-                 if (task != null)
-                 {
-                     task.IsCompleted = true;
-
-                     var updatedTransactions = transactions.Select(t => t.TaskId == taskId ? task : t).ToList();
-                     await SaveTransactionAsync(updatedTransactions);
-                 }
-
-
-             }
-             catch (Exception ex)
-             {
-                 Console.WriteLine(ex.Message);
-                 throw;
-             }
-         }*/
-
-
-        private async Task SaveTransactionAsync(List<Transaction> transactions)
+        public async Task DeleteTransactionAsync(Guid transactionId)
         {
             try
             {
-                var json = JsonSerializer.Serialize(transactions, new JsonSerializerOptions { WriteIndented = true });
+                var transactions = await LoadTransactionAsync();
+                var transactionToDelete = transactions.FirstOrDefault(t => t.TaskId == transactionId);
 
-                await File.WriteAllTextAsync(filePath, json);
+                if (transactionToDelete != null)
+                {
+                    transactions.Remove(transactionToDelete);
+                    await SaveTransactionAsync(transactions);
+                }
             }
             catch (Exception ex)
             {
