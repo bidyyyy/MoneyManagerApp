@@ -4,6 +4,70 @@
 @inject ITransactionService transactionService
 @inject AuthenticationStateService authStateService
 <style>
+
+    .top-container {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-bottom: 20px;
+        font-family: Arial, sans-serif;
+    }
+
+    .date-filter-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+
+        .date-filter-container label {
+            font-size: 14px;
+        }
+
+        .date-filter-container input,
+        .date-filter-container button {
+            padding: 8px 10px;
+            font-size: 14px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .date-filter-container button {
+            cursor: pointer;
+        }
+
+            .date-filter-container button:hover {
+                background-color: lightgrey;
+            }
+
+    /* Button Group Styling */
+    .button-group {
+        display: flex;
+        gap: 10px;
+    }
+
+        .button-group button,
+        .button-group .tab {
+            padding: 10px 15px;
+            font-size: 14px;
+            border: 1px solid #ccc;
+            background-color: #f2f2f2;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+            .button-group .tab.active {
+                background-color: #007bff;
+                color: #fff;
+                border-color: #007bff;
+            }
+
+            .button-group button:hover,
+            .button-group .tab:hover {
+                background-color: #e9ecef;
+            }
+
     table {
         width: 100%;
         border-collapse: collapse;
@@ -44,24 +108,34 @@
 
 <h3>Transactions</h3>
 
-<div class="input-group w-100 ms-4">
-    <input type="text" placeholder="Search transactions..." @oninput="SearchTransactions" />
+<div class="top-container">
+    <div class="date-filter-container">
+
+ <input type="text" placeholder="Search transactions..." @oninput="SearchTransactions" />
+
+
+    <label for="startDate">Start Date:</label>
     <input type="date" @bind="fromDate" placeholder="From Date" />
+
+    <label for="endDate">End Date:</label>
     <input type="date" @bind="toDate" placeholder="To Date" />
 </div>
-<div>
+
+
+<div class="button-group">
     <button @onclick="ResetFilters">Reset</button> <!-- Reset Button -->
 </div>
 
-<div>
+    <div class="button-group">
     <button @onclick="() => FilterType(0)">Inflow</button>
     <button @onclick="() => FilterType(1)">Outflow</button>
     <button @onclick="() => FilterType(2)">Debt</button>
 </div>
 
-<div>
+    <div class="button-group">
     <button @onclick="() => SetSortOrder(0)">Latest</button>
     <button @onclick="() => SetSortOrder(1)">Oldest</button>
+</div>
 </div>
 
 <div>

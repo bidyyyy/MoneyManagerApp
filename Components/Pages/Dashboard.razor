@@ -40,7 +40,7 @@
     .dashboard-item {
         flex: 1 1 calc(50% - 20px); /* Each item takes 50% width, minus spacing */
         background-color: #ffffff;
-        border: 2px solid #000000;
+       
         border-radius: 8px;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         padding: 20px;
@@ -60,12 +60,39 @@
         color: deeppink;
     }
 
-    /* Responsive Design */
-    @*:@media (max-width: 768px) {
-        .dashboard-item {
-            flex: 1 1 100%; /* Full width for smaller screens */
-        }*@
+    .date-filter-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 20px;
     }
+
+        .date-filter-container label {
+            font-size: 14px;
+        }
+
+        .date-filter-container input,
+        .date-filter-container button {
+            padding: 8px 10px;
+            font-size: 14px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .date-filter-container button {
+            
+            cursor: pointer;
+        }
+
+            .date-filter-container button:hover {
+                background-color: lightgrey;
+            }
+
+
+
+    
+    
 </style>
 
 
@@ -76,6 +103,20 @@
 {
     <h2>Your Currency: @authStateService.GetAuthenticatedUser().Currency</h2>
     <h3>Dashboard Summary</h3>
+
+
+    <div class="date-filter-container">
+        <label for="startDate">Start Date:</label>
+        <input type="date" @bind="startDate" />
+
+        <label for="endDate">End Date:</label>
+        <input type="date" @bind="endDate" />
+
+        <button @onclick="ApplyDateFilter">Filter</button>
+        <button @onclick="ResetFilters">Reset</button>
+    </div>
+
+
 
     <div class="dashboard-container">
         <div class="dashboard-item">
@@ -110,6 +151,10 @@
     private decimal remainingDebt;
     private decimal totalBalance;
 
+
+    private DateTime? startDate;
+    private DateTime? endDate;
+
     protected override async Task OnInitializedAsync()
     {
         await LoadAndCalculateTotals();
@@ -118,7 +163,12 @@
     private async Task LoadAndCalculateTotals()
     {
         var transactions = await transactionService.LoadTransactionAsync();
-
+        
+        if (startDate.HasValue && endDate.HasValue)
+        {
+            transactions = transactions.Where(t => t.Date >= startDate.Value && t.Date <= endDate.Value).ToList();
+        }
+        
         totalInflow = transactions.Where(t => t.Type == "Inflow").Sum(t => t.Amount);
         totalOutflow = transactions.Where(t => t.Type == "Outflow").Sum(t => t.Amount);
         totalDebt = transactions.Where(t => t.Type == "Debt").Sum(t => t.Amount);
@@ -126,4 +176,17 @@
         remainingDebt = totalDebt - paidDebt;
         totalBalance = totalInflow - totalOutflow - paidDebt;
     }
+
+     private async Task ApplyDateFilter()
+    {
+        await LoadAndCalculateTotals();
+    }
+
+    private async Task ResetFilters()
+    {
+        startDate = null;
+        endDate = null;
+        await LoadAndCalculateTotals();
+    }
+
 }
