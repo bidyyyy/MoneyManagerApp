@@ -300,6 +300,7 @@
                 (currentFilter == 0 && t.Type == "Inflow") ||
                 (currentFilter == 1 && t.Type == "Outflow") ||
                 (currentFilter == 2 && t.Type == "Debt"))
+            .Where(t => string.IsNullOrEmpty(selectedCategory) || t.Tag == selectedCategory)
             .Where(t => string.IsNullOrEmpty(searchText) ||
                         t.Title.ToLower().Contains(searchText) ||
                         t.Date.ToString("MMMM d, yyyy").ToLower().Contains(searchText) ||
