@@ -10,7 +10,7 @@
             <Color x:Key="PrimaryTextColor">White</Color>
 
             <Style TargetType="Label">
-                <Setter Property="TextColor" Value="{DynamicResource PrimaryTextColor}" />
+                <Setter Property="TextColor" Value="{DynamicResource PrimaryTextColor}"/>
                 <Setter Property="FontFamily" Value="OpenSansRegular" />
             </Style>
 
@@ -18,7 +18,7 @@
                 <Setter Property="TextColor" Value="{DynamicResource PrimaryTextColor}" />
                 <Setter Property="FontFamily" Value="OpenSansRegular" />
                 <Setter Property="BackgroundColor" Value="Pink"/>
-                <Setter Property="Padding" Value="14,10" />
+                <Setter Property="Padding" Value="14,10"/>
             </Style>
 
         </ResourceDictionary>
