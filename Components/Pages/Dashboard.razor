@@ -5,28 +5,23 @@
 @inject AuthenticationStateService authStateService
 @inject TransactionSummaryService summaryService
 <style>
-    /* General page styling */
     body {
         font-family: Arial, sans-serif;
         background-color: #f9f9f9;
         margin: 0;
         padding: 0;
     }
-
     h3{
      text-align: center;
      font-family: 'Times New Roman', Times, Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
     }
-
     h1, h2 {
         text-align: center;
         margin-bottom: 20px;
     }
-
     h1 {
         margin-top: 20px;
     }
-
     .dashboard-container {
         max-width: 800px;
         margin: 0 auto;
@@ -36,37 +31,31 @@
         justify-content: center;
         padding: 20px;
     }
-
     .dashboard-item {
-        flex: 1 1 calc(50% - 20px); /* Each item takes 50% width, minus spacing */
+        flex: 1 1 calc(50% - 20px); 
         background-color: #ffffff;
-       
         border-radius: 8px;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         padding: 20px;
         text-align: center;
         min-width: 250px;
     }
-
     .dashboard-item h4 {
         font-size: 1.2rem;
         margin-bottom: 10px;
     }
-
         .dashboard-item h5 {
             font-size: 1.2rem;
             margin-bottom: 10px;
             font-weight: bold;
             color: deeppink;
         }
-
     .dashboard-item p {
         font-size: 1.1rem;
         margin: 0;
         font-weight: bold;
         color: deeppink;
     }
-
     .date-filter-container {
         display: flex;
         justify-content: center;
@@ -74,11 +63,9 @@
         gap: 15px;
         margin-bottom: 20px;
     }
-
         .date-filter-container label {
             font-size: 14px;
         }
-
         .date-filter-container input,
         .date-filter-container button {
             padding: 8px 10px;
@@ -86,15 +73,13 @@
             border: 1px solid #ccc;
             border-radius: 4px;
         }
-
         .date-filter-container button {
             
             cursor: pointer;
         }
-
-            .date-filter-container button:hover {
+        .date-filter-container button:hover {
                 background-color: lightgrey;
-            }    
+        }    
 </style>
 
 <h1>Welcome, @authStateService.GetAuthenticatedUser().Name!</h1>
@@ -104,17 +89,18 @@
     <h2>Your Currency: @authStateService.GetAuthenticatedUser().Currency</h2>
     <h3>Dashboard Summary</h3>
 
-
+    <!-- Date Filtering -->
     <div class="date-filter-container">
         <label for="startDate">Start Date:</label>
         <input type="date" @bind="startDate" />
 
         <label for="endDate">End Date:</label>
         <input type="date" @bind="endDate" />
-
-        <button @onclick="ApplyDateFilter">Filter</button>
-        <button @onclick="ResetFilters">Reset</button>
+     <!--  Reset Buttons filtering -->
+      <button @onclick="ApplyDateFilter">Filter</button>
+      <button @onclick="ResetFilters">Reset</button>
     </div>
+    <!-- Dashboard Items -->
     <div class="dashboard-container">
         <div class="dashboard-item">
             <h4>Total Inflow:</h4>
@@ -136,7 +122,12 @@
              <h4>Total Balance: </h4>
             <p>@authStateService.GetAuthenticatedUser().Currency @totalBalance</p>
         </div>
+        <div class="dashboard-item">
+            <h4>Total Number of Transactions: </h4>
+            <p>@totalNumberofTransaction</p>
+        </div>
     </div>
+    <!-- List of pending debts -->
     <div class="dashboard-container">
         <div class="dashboard-item" style="flex: 1 1 100%;">
             <h5>Pending Debts:</h5>
@@ -158,6 +149,7 @@
             }
         </div>
     </div>
+    <!-- Latest Transactions-->
 <div class="dashboard-container">
     <div class="dashboard-item" style="flex: 1 1 100%;">
         <h5>Latest Transactions:</h5>
@@ -200,17 +192,16 @@
     private decimal paidDebt;
     private decimal remainingDebt;
     private decimal totalBalance;
+    private int totalNumberofTransaction;
     private List<Transaction> remainingDebtsList = new List<Transaction>();
     private List<Transaction> latestTransactions = new List<Transaction>();
     private string selectedFilter = "All";
-
-   
-
 
     private DateTime? startDate;
     private DateTime? endDate;
 
 
+    // Handle filter change event (Inflow, Outflow, Debt)
     private async Task HandleFilterChange(ChangeEventArgs e)
     {
         if (e.Value != null)
@@ -219,18 +210,17 @@
             await ApplyTransactionFilter(); // Apply the filter
         }
     }
-
-
+    // On Initialization Load and calculate totals
     protected override async Task OnInitializedAsync()
     {
         await LoadAndCalculateTotals();
     }
-
+    // Apply the selected filter for transactions
     private async Task ApplyTransactionFilter()
     {
         var transactions = await transactionService.LoadTransactionAsync();
 
-        // Filter transactions
+        // Filter transactions based on selected type
         transactions = selectedFilter switch
         {
             "Inflow" => transactions.Where(t => t.Type == "Inflow").ToList(),
@@ -245,13 +235,12 @@
             .Take(5)
             .ToList();
     }
-
-
+    // Load transactions and calculate summary values
     private async Task LoadAndCalculateTotals()
     {
         var transactions = await transactionService.LoadTransactionAsync();
-       
 
+        // Apply date filter if selected
         if (startDate.HasValue && endDate.HasValue)
         {
             transactions = transactions
@@ -259,32 +248,27 @@
         .ToList();
 
         }
+        // transactions summary data
         var summary = summaryService.CalculateSummary(transactions);
-
         totalInflow = summary.TotalInflow;
         totalOutflow = summary.TotalOutflow;
         totalDebt = summary.TotalDebt;
         paidDebt = summary.PaidDebt;
-
         remainingDebt = summary.RemainingDebt;
         totalBalance = summary.TotalBalance;
+        totalNumberofTransaction = transactions.Count;
 
-
-        // Get latest 5 remaining debts
+        // Get remaining debts
         remainingDebtsList = transactions
             .Where(t => t.Type == "Debt" && !t.IsPaid)
             .OrderByDescending(t => t.DueDate)
-            .Take(5)
             .ToList();
-
     }   
-
-     private async Task ApplyDateFilter()
+    private async Task ApplyDateFilter()// Apply date range filter
     {
         await LoadAndCalculateTotals( );
     }
-
-    private async Task ResetFilters()
+    private async Task ResetFilters()// Reset the date filters
     {
         startDate = null;
         endDate = null;
