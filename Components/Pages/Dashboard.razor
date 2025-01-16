@@ -3,7 +3,7 @@
 @using MoneyManager.Services
 @inject ITransactionService transactionService
 @inject AuthenticationStateService authStateService
-
+@inject TransactionSummaryService summaryService
 <style>
     /* General page styling */
     body {
@@ -53,6 +53,13 @@
         margin-bottom: 10px;
     }
 
+        .dashboard-item h5 {
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+            font-weight: bold;
+            color: deeppink;
+        }
+
     .dashboard-item p {
         font-size: 1.1rem;
         margin: 0;
@@ -87,15 +94,8 @@
 
             .date-filter-container button:hover {
                 background-color: lightgrey;
-            }
-
-
-
-    
-    
+            }    
 </style>
-
-
 
 <h1>Welcome, @authStateService.GetAuthenticatedUser().Name!</h1>
 
@@ -115,32 +115,82 @@
         <button @onclick="ApplyDateFilter">Filter</button>
         <button @onclick="ResetFilters">Reset</button>
     </div>
-
-
-
     <div class="dashboard-container">
         <div class="dashboard-item">
-        <h4>Total Inflow:</h4>
-        <p>@authStateService.GetAuthenticatedUser().Currency @totalInflow</p>
+            <h4>Total Inflow:</h4>
+            <p>@authStateService.GetAuthenticatedUser().Currency @totalInflow</p>
         </div>
          <div class="dashboard-item">
-         <h4>Total Outflow:</h4>
-        <p>@authStateService.GetAuthenticatedUser().Currency @totalOutflow</p>
-        </div>
-        @* <p><strong>Total Debt: </strong>@authStateService.GetAuthenticatedUser().Currency @totalDebt</p>*@
-         <div class="dashboard-item">
-         <h4>Paid Debt:</h4>
-        <p>@authStateService.GetAuthenticatedUser().Currency @paidDebt</p>
+            <h4>Total Outflow:</h4>
+            <p>@authStateService.GetAuthenticatedUser().Currency @totalOutflow</p>
         </div>
          <div class="dashboard-item">
-         <h4>Remaining Debt:</h4>
-        <p>@authStateService.GetAuthenticatedUser().Currency @remainingDebt</p>
+             <h4>Paid Debt:</h4>
+            <p>@authStateService.GetAuthenticatedUser().Currency @paidDebt</p>
         </div>
          <div class="dashboard-item">
-         <h4>Total Balance: </h4>
-        <p>@authStateService.GetAuthenticatedUser().Currency @totalBalance</p>
+             <h4>Remaining Debt:</h4>
+            <p>@authStateService.GetAuthenticatedUser().Currency @remainingDebt</p>
+        </div>
+         <div class="dashboard-item">
+             <h4>Total Balance: </h4>
+            <p>@authStateService.GetAuthenticatedUser().Currency @totalBalance</p>
         </div>
     </div>
+    <div class="dashboard-container">
+        <div class="dashboard-item" style="flex: 1 1 100%;">
+            <h5>Pending Debts:</h5>
+            @if (remainingDebtsList.Any())
+            {
+                <ul>
+                    @foreach (var debt in remainingDebtsList)
+                    {
+                        <li>
+                            <strong>@debt.Title</strong>: @authStateService.GetAuthenticatedUser().Currency @debt.Amount
+                            remaining to pay <strong>@debt.Source</strong> (Due: @debt.DueDate?.ToString("MMMM d, yyyy"))
+                        </li>
+                    }
+                </ul>
+            }
+            else
+            {
+                <p>No remaining debts available.</p>
+            }
+        </div>
+    </div>
+<div class="dashboard-container">
+    <div class="dashboard-item" style="flex: 1 1 100%;">
+        <h5>Latest Transactions:</h5>
+
+        <div class="filter-container">
+            <label>Filter By:</label>
+                <select @onchange="HandleFilterChange">
+                <option value="All">All</option>
+                <option value="Inflow">Inflow</option>
+                <option value="Outflow">Outflow</option>
+                <option value="Debt">Debt</option>
+            </select>
+        </div>
+
+        @if (latestTransactions.Any())
+        {
+            <ul>
+                @foreach (var transaction in latestTransactions)
+                {
+                    <li>
+                        <strong>@transaction.Title</strong>: @authStateService.GetAuthenticatedUser().Currency @transaction.Amount
+                        (Type: @transaction.Type, Date: @transaction.Date.ToString("MMMM d, yyyy"))
+                    </li>
+                }
+            </ul>
+        }
+        else
+        {
+            <p>No transactions available for the selected filter.</p>
+        }
+    </div>
+</div>
+
 }
 
 @code {
@@ -150,36 +200,88 @@
     private decimal paidDebt;
     private decimal remainingDebt;
     private decimal totalBalance;
+    private List<Transaction> remainingDebtsList = new List<Transaction>();
+    private List<Transaction> latestTransactions = new List<Transaction>();
+    private string selectedFilter = "All";
+
+   
 
 
     private DateTime? startDate;
     private DateTime? endDate;
+
+
+    private async Task HandleFilterChange(ChangeEventArgs e)
+    {
+        if (e.Value != null)
+        {
+            selectedFilter = e.Value.ToString(); // Update the selected filter
+            await ApplyTransactionFilter(); // Apply the filter
+        }
+    }
+
 
     protected override async Task OnInitializedAsync()
     {
         await LoadAndCalculateTotals();
     }
 
+    private async Task ApplyTransactionFilter()
+    {
+        var transactions = await transactionService.LoadTransactionAsync();
+
+        // Filter transactions
+        transactions = selectedFilter switch
+        {
+            "Inflow" => transactions.Where(t => t.Type == "Inflow").ToList(),
+            "Outflow" => transactions.Where(t => t.Type == "Outflow").ToList(),
+            "Debt" => transactions.Where(t => t.Type == "Debt").ToList(),
+            _ => transactions // Default for "All"
+        };
+
+        // Sort and take the latest 5
+        latestTransactions = transactions
+            .OrderByDescending(t => t.Date)
+            .Take(5)
+            .ToList();
+    }
+
+
     private async Task LoadAndCalculateTotals()
     {
         var transactions = await transactionService.LoadTransactionAsync();
-        
+       
+
         if (startDate.HasValue && endDate.HasValue)
         {
-            transactions = transactions.Where(t => t.Date >= startDate.Value && t.Date <= endDate.Value).ToList();
+            transactions = transactions
+        .Where(t => t.Date >= startDate.Value && t.Date <= endDate.Value)
+        .ToList();
+
         }
-        
-        totalInflow = transactions.Where(t => t.Type == "Inflow").Sum(t => t.Amount);
-        totalOutflow = transactions.Where(t => t.Type == "Outflow").Sum(t => t.Amount);
-        totalDebt = transactions.Where(t => t.Type == "Debt").Sum(t => t.Amount);
-        paidDebt = transactions.Where(t => t.Type == "Debt" && t.IsPaid).Sum(t => t.Amount);
-        remainingDebt = totalDebt - paidDebt;
-        totalBalance = totalInflow - totalOutflow - paidDebt;
-    }
+        var summary = summaryService.CalculateSummary(transactions);
+
+        totalInflow = summary.TotalInflow;
+        totalOutflow = summary.TotalOutflow;
+        totalDebt = summary.TotalDebt;
+        paidDebt = summary.PaidDebt;
+
+        remainingDebt = summary.RemainingDebt;
+        totalBalance = summary.TotalBalance;
+
+
+        // Get latest 5 remaining debts
+        remainingDebtsList = transactions
+            .Where(t => t.Type == "Debt" && !t.IsPaid)
+            .OrderByDescending(t => t.DueDate)
+            .Take(5)
+            .ToList();
+
+    }   
 
      private async Task ApplyDateFilter()
     {
-        await LoadAndCalculateTotals();
+        await LoadAndCalculateTotals( );
     }
 
     private async Task ResetFilters()

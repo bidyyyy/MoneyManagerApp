@@ -4,6 +4,8 @@
 @inject ITransactionService transactionService
 @inject AuthenticationStateService authStateService
 @inject ICategoryService categoryService
+@inject TransactionSummaryService summaryService
+
 
 <style>
     body {
@@ -213,33 +215,35 @@
     private List<Category> categories = new List<Category>();
     private string errorMessage;
     private string successMessage;
-    private decimal totalBalance = 0;
+    private decimal totalBalance;
 
-    
 
     protected override async Task OnInitializedAsync()
     {
-        categories = await categoryService.LoadCategoriesAsync();
-        if (authStateService.IsAuthenticated())
-        {
-            var transactions = await transactionService.LoadTransactionAsync();
+        var transactions = await transactionService.LoadTransactionAsync();
 
-            var totalInflow = transactions.Where(t => t.Type == "Inflow").Sum(t => t.Amount);
-            var totalOutflow = transactions.Where(t => t.Type == "Outflow").Sum(t => t.Amount);
-            var totalDebt = transactions.Where(t => t.Type == "Debt").Sum(t => t.Amount);
-            var clearedDebt = transactions.Where(t => t.Type == "Debt" && t.IsPaid).Sum(t => t.Amount);
-            var pendingDebt = totalDebt - clearedDebt;
-            totalBalance = totalInflow + pendingDebt - totalOutflow;
-        }
+        var summary = summaryService.CalculateSummary(transactions);
+        totalBalance = summary.TotalBalance;
+
+        categories = await categoryService.LoadCategoriesAsync();
+        
     }
 
     private async Task AddNewTask()
     {
         try
         {
-            if (string.IsNullOrWhiteSpace(newItem.Title) || newItem.Amount <= 0)
+            if (string.IsNullOrWhiteSpace(newItem.Title) || newItem.Amount <= 0 || string.IsNullOrWhiteSpace(newItem.Type))
             {
-                errorMessage = "Title and valid amount are required.";
+                errorMessage = "Title, valid amount and type are required.";
+                successMessage = null;
+                return;
+            }
+
+            // Validation for category
+            if (string.IsNullOrWhiteSpace(newItem.Tag))
+            {
+                errorMessage = "Please select a valid category.";
                 successMessage = null;
                 return;
             }

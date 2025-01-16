@@ -3,6 +3,7 @@
 @using MoneyManager.Services
 @inject ITransactionService transactionService
 @inject AuthenticationStateService authStateService
+@inject TransactionSummaryService summaryService
 <style>
 
     .top-container {
@@ -111,60 +112,58 @@
 <div class="top-container">
     <div class="date-filter-container">
 
- <input type="text" placeholder="Search transactions..." @oninput="SearchTransactions" />
+         <input type="text" placeholder="Search transactions..." @oninput="SearchTransactions" />
 
 
-    <label for="startDate">Start Date:</label>
-    <input type="date" @bind="fromDate" placeholder="From Date" />
+            <label for="startDate">Start Date:</label>
+            <input type="date" @bind="fromDate" placeholder="From Date" />
 
-    <label for="endDate">End Date:</label>
-    <input type="date" @bind="toDate" placeholder="To Date" />
-</div>
-
-
-<div class="button-group">
-    <button @onclick="ResetFilters">Reset</button> <!-- Reset Button -->
-</div>
-
+            <label for="endDate">End Date:</label>
+            <input type="date" @bind="toDate" placeholder="To Date" />
+      </div>
     <div class="button-group">
-    <button @onclick="() => FilterType(0)">Inflow</button>
-    <button @onclick="() => FilterType(1)">Outflow</button>
-    <button @onclick="() => FilterType(2)">Debt</button>
-</div>
+        <button @onclick="ResetFilters">Reset</button> <!-- Reset Button -->
+            </div>
 
-    <div class="button-group">
-    <button @onclick="() => SetSortOrder(0)">Latest</button>
-    <button @onclick="() => SetSortOrder(1)">Oldest</button>
-</div>
-</div>
+            <div class="button-group">
+                <button @onclick="() => FilterType(0)">Inflow</button>
+                <button @onclick="() => FilterType(1)">Outflow</button>
+                <button @onclick="() => FilterType(2)">Debt</button>
+            </div>
 
-<div>
-    <label for="categoryFilter">Category:</label>
-    <select id="categoryFilter" @onchange="FilterByCategory">
-        <option value="">-- All Categories --</option>
-        @foreach (var category in categories)
+                <div class="button-group">
+                <button @onclick="() => SetSortOrder(0)">Latest</button>
+                <button @onclick="() => SetSortOrder(1)">Oldest</button>
+            </div>
+            </div>
+
+            <div>
+                <label for="categoryFilter">Category:</label>
+                <select id="categoryFilter" @onchange="FilterByCategory">
+                    <option value="">-- All Categories --</option>
+                    @foreach (var category in categories)
+                    {
+                        <option value="@category">@category</option>
+                    }
+                </select>
+            </div>
+
+    <div class="mt-3">
+        @if (currentFilter == 0)
         {
-            <option value="@category">@category</option>
+            <p><strong>Total Inflow: </strong>@authStateService.GetAuthenticatedUser().Currency @totalInflow</p>
         }
-    </select>
-</div>
-
-<div class="mt-3">
-    @if (currentFilter == 0)
-    {
-        <p><strong>Total Inflow: </strong>@authStateService.GetAuthenticatedUser().Currency @totalInflow</p>
-    }
-    else if (currentFilter == 1)
-    {
-        <p><strong>Total Outflow: </strong>@authStateService.GetAuthenticatedUser().Currency @totalOutflow</p>
-    }
-    else if (currentFilter == 2)
-    {
-        <p><strong>Total Debt: </strong>@authStateService.GetAuthenticatedUser().Currency @totalDebt</p>
-        <p><strong>Paid Debt: </strong>@authStateService.GetAuthenticatedUser().Currency @paidDebt</p>
-        <p><strong>Remaining Debt: </strong>@authStateService.GetAuthenticatedUser().Currency @remainingDebt</p>
-    }
-</div>
+        else if (currentFilter == 1)
+        {
+            <p><strong>Total Outflow: </strong>@authStateService.GetAuthenticatedUser().Currency @totalOutflow</p>
+        }
+        else if (currentFilter == 2)
+        {
+            <p><strong>Total Debt: </strong>@authStateService.GetAuthenticatedUser().Currency @totalDebt</p>
+            <p><strong>Paid Debt: </strong>@authStateService.GetAuthenticatedUser().Currency @paidDebt</p>
+            <p><strong>Remaining Debt: </strong>@authStateService.GetAuthenticatedUser().Currency @remainingDebt</p>
+        }
+ </div>
 
 <table>
     <thead>
@@ -243,6 +242,8 @@
     private decimal totalDebt;
     private decimal paidDebt;
     private decimal remainingDebt;
+    private TransactionSummary summary;
+
 
     // New fields for date range filtering
     private DateTime? fromDate;
@@ -258,7 +259,17 @@
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadTransaction();
+        var transactions = await transactionService.LoadTransactionAsync();
+        summary = summaryService.CalculateSummary(transactions);
+        transaction = transactions;
+
+        // Load categories
+        categories = transaction.Select(t => t.Tag).Distinct().OrderBy(c => c).ToList();
+
+        // Apply filters
+        ApplyFilters();
+
+        // Set default filter
         FilterType(0); // Default filter: Inflow
     }
 
@@ -324,7 +335,13 @@
             filteredTransaction = filteredTransaction.OrderBy(t => t.Date).ToList(); // Oldest first
         }
 
-        CalculateTotal();
+        summary = summaryService.CalculateSummary(filteredTransaction);
+
+        totalInflow = summary.TotalInflow;
+        totalOutflow = summary.TotalOutflow;
+        totalDebt = summary.TotalDebt;
+        remainingDebt = summary.RemainingDebt;
+        paidDebt = summary.PaidDebt;
     }
 
     private async Task ClearDebt(Transaction transaction)
@@ -335,26 +352,25 @@
 
         try
         {
+            // Update the database
             await transactionService.UpdateTransactionAsync(transaction);
             alertMessage = "Debt marked as paid";
-            ApplyFilters();
+
+            // Update the local transaction list
+            var updatedTransaction = this.transaction.FirstOrDefault(t => t.TaskId == transaction.TaskId);
+            if (updatedTransaction != null)
+            {
+                updatedTransaction.IsPaid = true;
+            }
+
+            ApplyFilters(); // Reapply filters to update the view
         }
         catch (Exception ex)
         {
             alertMessage = $"Error clearing debt: {ex.Message}";
         }
     }
-
-    private void CalculateTotal()
-    {
-        totalInflow = filteredTransaction.Where(t => t.Type == "Inflow").Sum(t => t.Amount);
-        totalOutflow = filteredTransaction.Where(t => t.Type == "Outflow").Sum(t => t.Amount);
-        totalDebt = filteredTransaction.Where(t => t.Type == "Debt").Sum(t => t.Amount);
-        paidDebt = filteredTransaction.Where(t => t.Type == "Debt" && t.IsPaid).Sum(t => t.Amount);
-        remainingDebt = totalDebt - paidDebt;
-
-    }
-
+ 
     private async Task DeleteTransaction(Guid transactionId)
     {
         try

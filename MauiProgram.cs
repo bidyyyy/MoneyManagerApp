@@ -23,6 +23,7 @@ namespace MoneyManager
             builder.Services.AddSingleton<AuthenticationStateService>();
             builder.Services.AddScoped<ICategoryService, CategoryService>();
             builder.Services.AddSingleton<ITransactionService, TransactionService>();
+            builder.Services.AddScoped<TransactionSummaryService>();
 
 #if DEBUG
             builder.Services.AddBlazorWebViewDeveloperTools();
