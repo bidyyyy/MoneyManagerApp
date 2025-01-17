@@ -122,7 +122,7 @@
 
 <h3>Add Transaction</h3>
 
-<form>
+<form> <!-- Form to collect transaction details from the user -->
     <div>
         <label for="title" class="fw-bold">Title</label>
         <input type="text" id="title" @bind="newItem.Title" placeholder="Enter title" />
@@ -211,13 +211,14 @@
 </form>
 
 @code {
+    // Initialize new transaction and categories list
     private Transaction newItem = new Transaction { Date = DateTime.Today };
     private List<Category> categories = new List<Category>();
     private string errorMessage;
     private string successMessage;
     private decimal totalBalance;
 
-
+    // On page load, initialize categories and calculate the total balance
     protected override async Task OnInitializedAsync()
     {
         var transactions = await transactionService.LoadTransactionAsync();
@@ -228,7 +229,7 @@
         categories = await categoryService.LoadCategoriesAsync();
         
     }
-
+    // Method to handle form submission and validation
     private async Task AddNewTask()
     {
         try
@@ -247,14 +248,14 @@
                 successMessage = null;
                 return;
             }
-
+            // Validate for Outflow transaction type to ensure it doesn't exceed total balance
             if (newItem.Type == "Outflow" && newItem.Amount > totalBalance)
             {
                 errorMessage = "The Outflow amount cannot exceed the total balance.";
                 successMessage = null;
                 return;
             }
-
+            // Validation for Debt transaction
             if (newItem.Type == "Debt")
             {
                 if (!newItem.DueDate.HasValue || string.IsNullOrWhiteSpace(newItem.Source))
@@ -272,11 +273,11 @@
                     return;
                 }
             }
-
+            // Assign a unique Task ID for the transaction
             newItem.TaskId = Guid.NewGuid();
 
             await transactionService.SaveTransactionAsync(newItem);
-
+            // Save the transaction asynchronously
             newItem = new Transaction { Date = DateTime.Today };
             successMessage = "Transaction added successfully!";
             errorMessage = null;

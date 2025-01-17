@@ -5,15 +5,13 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using MoneyManager.Models;
-
-
 namespace MoneyManager.Services
 {
+    //To store the transacton data in JSON file
     internal class TransactionService : ITransactionService
     {
-        private readonly string filePath = Path.Combine(AppContext.BaseDirectory, "Transaction.json");
-
-        public async Task<List<Transaction>> LoadTransactionAsync()
+        private readonly string filePath = Path.Combine(AppContext.BaseDirectory, "Transaction.json");// Path to the JSON file storing transaction data.
+        public async Task<List<Transaction>> LoadTransactionAsync() // Loads the list of transactions from the JSON file.
         {
             try
             {
@@ -28,7 +26,7 @@ namespace MoneyManager.Services
                 {
                     return new List<Transaction>();
                 }
-
+                // Deserialize the JSON string into a list of transactions.
                 return JsonSerializer.Deserialize<List<Transaction>>(json) ?? new List<Transaction>();
             }
             catch (Exception ex)
@@ -37,14 +35,14 @@ namespace MoneyManager.Services
                 throw;
             }
         }
-
+        // Adds a new transaction to the list of transactions and saves it to the JSON file.
         public async Task SaveTransactionAsync(Transaction transactionItem)
         {
             try
             {
-                var transactions = await LoadTransactionAsync();
-                transactions.Add(transactionItem);
-                await SaveTransactionAsync(transactions);
+                var transactions = await LoadTransactionAsync();// Load existing transactions.
+                transactions.Add(transactionItem); // Add the new transaction to the list.
+                await SaveTransactionAsync(transactions);// Save the updated list of transactions.
             }
             catch (Exception ex)
             {
@@ -52,6 +50,7 @@ namespace MoneyManager.Services
                 throw;
             }
         }
+        // Updates an existing transaction in the list and saves the updated list to the JSON file.
         public async Task UpdateTransactionAsync(Transaction transactionItem)
         {
             try
@@ -71,9 +70,6 @@ namespace MoneyManager.Services
                     existingTransaction.DueDate = transactionItem.DueDate;
                     existingTransaction.Source = transactionItem.Source;
                     existingTransaction.IsPaid = transactionItem.IsPaid;
-
-
-
                     await SaveTransactionAsync(transactions);
                 }
             }
@@ -83,7 +79,7 @@ namespace MoneyManager.Services
                 throw;
             }
         }
-
+        // Saves the new list of transactions to the JSON file.
         private async Task SaveTransactionAsync(List<Transaction> transactions)
         {
             try
@@ -98,7 +94,7 @@ namespace MoneyManager.Services
                 throw;
             }
         }
-
+        // Deletes a transaction by its TaskId and saves the updated list to the JSON file.
         public async Task DeleteTransactionAsync(Guid transactionId)
         {
             try
@@ -118,13 +114,6 @@ namespace MoneyManager.Services
                 throw;
             }
         }
-
-
-
     }
-
 }
        
-
-
-

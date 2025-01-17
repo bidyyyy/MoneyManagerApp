@@ -5,16 +5,16 @@
 
 <style>
     button.btn-primary {
-        background-color: #ff69b4 !important; /* Ensure button stays pink */
+        background-color: #ff69b4 !important; 
         border-color: #ff69b4 !important;
     }
 
         button.btn-primary:hover {
-            background-color: #ff4f94 !important; /* Darker pink for hover */
+            background-color: #ff4f94 !important; 
             border-color: #ff4f94 !important;
         }
-
 </style>
+<!-- Add Category Page -->
 <h3>Add category</h3>
 <div class="container">
     <div class="row justify-content-center">
@@ -25,19 +25,21 @@
                     <input type="text" id="categoryName" class="form-control" @bind="newCategory.Name" placeholder="Enter category name" />
                 </div>
 
+                <!-- Display error message if it exists -->
                 @if (!string.IsNullOrEmpty(errorMessage))
                 {
                     <div class="alert alert-danger text-center">
                         @errorMessage
                     </div>
                 }
+                <!-- Display success message if it exists -->
                 @if (!string.IsNullOrEmpty(successMessage))
                 {
                     <div class="alert alert-success text-center">
                         @successMessage
                     </div>
                 }
-
+                <!-- Button to trigger the "SubmitCategory" method -->
                 <button type="button" class="btn btn-primary w-100 mt-3" @onclick="SubmitCategory">Add Category</button>
             </form>
         </div>
@@ -45,20 +47,22 @@
 </div>
 
 @code {
-    private Category newCategory = new Category();
+    private Category newCategory = new Category(); // Model to hold the new category data
+    // Variables to store error and success messages
     private string errorMessage;
     private string successMessage;
-
+    // Method to handle category submission
     private async Task SubmitCategory()
     {
         try
         {
-            if (string.IsNullOrWhiteSpace(newCategory.Name))
+            if (string.IsNullOrWhiteSpace(newCategory.Name)) // Validate if the category name is provided
             {
                 errorMessage = "Category name cannot be empty.";
                 successMessage = null;
                 return;
             }
+            // Check if the category already exists
             var existingCategories = await categoryService.LoadCategoriesAsync();
             if (existingCategories.Any(c => c.Name.Equals(newCategory.Name, StringComparison.OrdinalIgnoreCase)))
             {
@@ -66,16 +70,15 @@
                 successMessage = null;
                 return;
             }
-
-
-            await categoryService.SaveCategoryAsync(newCategory);
-
+            await categoryService.SaveCategoryAsync(newCategory); // Save the new category
+      // Reset the form and display success message
             newCategory = new Category();
             successMessage = "Category added successfully.";
             errorMessage = null;
         }
         catch (Exception ex)
         {
+            // Show an error message if there was any failure during submission.
             errorMessage = "Failed to add category.";
             successMessage = null;
             Console.WriteLine(ex.Message);

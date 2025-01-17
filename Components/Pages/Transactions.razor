@@ -5,7 +5,6 @@
 @inject AuthenticationStateService authStateService
 @inject TransactionSummaryService summaryService
 <style>
-
     .top-container {
         display: flex;
         flex-direction: column;
@@ -13,7 +12,6 @@
         margin-bottom: 20px;
         font-family: Arial, sans-serif;
     }
-
     .date-filter-container {
         display: flex;
         justify-content: center;
@@ -21,83 +19,65 @@
         gap: 15px;
         margin-bottom: 20px;
     }
-
-        .date-filter-container label {
+    .date-filter-container label {
             font-size: 14px;
-        }
-
-        .date-filter-container input,
-        .date-filter-container button {
+    }
+    .date-filter-container input,
+    .date-filter-container button {
             padding: 8px 10px;
             font-size: 14px;
             border: 1px solid #ccc;
             border-radius: 4px;
-        }
-
-        .date-filter-container button {
+    }
+    .date-filter-container button {
             cursor: pointer;
-        }
+    }
 
-            .date-filter-container button:hover {
+    .date-filter-container button:hover {
                 background-color: lightgrey;
-            }
-
-    /* Button Group Styling */
+    }
     .button-group {
         display: flex;
         gap: 10px;
     }
-
-        .button-group button,
-        .button-group .tab {
+      .button-group button,
+      .button-group .tab {
             padding: 10px 15px;
             font-size: 14px;
             border: 1px solid #ccc;
             background-color: #f2f2f2;
             cursor: pointer;
             border-radius: 4px;
+       }
+        .button-group .tab.active {
+             background-color: #007bff;
+             color: #fff;
+             border-color: #007bff;
         }
-
-            .button-group .tab.active {
-                background-color: #007bff;
-                color: #fff;
-                border-color: #007bff;
-            }
-
-            .button-group button:hover,
-            .button-group .tab:hover {
-                background-color: #e9ecef;
-            }
-
+         .button-group button:hover,
+         .button-group .tab:hover {
+          background-color: #e9ecef;
+         }
     table {
         width: 100%;
         border-collapse: collapse;
         margin-top: 20px;
         font-family: Arial, sans-serif;
     }
-    /* Table Header */
     th, td {
         padding: 12px;
         text-align: left;
         border-bottom: 1px solid #ddd;
     }
-
-    /* Header Styling */
     th {
         background-color: #f2f2f2;
         color: #333;
         font-weight: bold;
     }
-
-    /* Row Hover Effect */
     tr:hover {
         background-color: #f9f9f9;
     }
-
-
-
 </style>
-
 
 @if (!string.IsNullOrEmpty(alertMessage))
 {
@@ -106,39 +86,31 @@
         <button @onclick="ClearAlert">Close</button>
     </div>
 }
-
 <h3>Transactions</h3>
-
 <div class="top-container">
     <div class="date-filter-container">
-
          <input type="text" placeholder="Search transactions..." @oninput="SearchTransactions" />
-
-
             <label for="startDate">Start Date:</label>
             <input type="date" @bind="fromDate" placeholder="From Date" />
-
             <label for="endDate">End Date:</label>
             <input type="date" @bind="toDate" placeholder="To Date" />
       </div>
+  <div class="button-group">
+      <button @onclick="ResetFilters">Reset</button> <!-- Reset Button -->
+  </div>
     <div class="button-group">
-        <button @onclick="ResetFilters">Reset</button> <!-- Reset Button -->
-            </div>
-
-            <div class="button-group">
-                <button @onclick="() => FilterType(0)">Inflow</button>
-                <button @onclick="() => FilterType(1)">Outflow</button>
-                <button @onclick="() => FilterType(2)">Debt</button>
-            </div>
-
-                <div class="button-group">
-                <button @onclick="() => SetSortOrder(0)">Latest</button>
-                <button @onclick="() => SetSortOrder(1)">Oldest</button>
-            </div>
-            </div>
-
-            <div>
-                <label for="categoryFilter">Category:</label>
+        <!-- Filteration by transaction type -->
+           <button @onclick="() => FilterType(0)">Inflow</button>
+           <button @onclick="() => FilterType(1)">Outflow</button>
+           <button @onclick="() => FilterType(2)">Debt</button>
+       </div>
+       <div class="button-group">
+            <button @onclick="() => SetSortOrder(0)">Latest</button>
+            <button @onclick="() => SetSortOrder(1)">Oldest</button>
+       </div>
+</div>
+       <div>
+             <label for="categoryFilter">Category:</label>
                 <select id="categoryFilter" @onchange="FilterByCategory">
                     <option value="">-- All Categories --</option>
                     @foreach (var category in categories)
@@ -146,9 +118,9 @@
                         <option value="@category">@category</option>
                     }
                 </select>
-            </div>
+       </div>
 
-    <div class="mt-3">
+  <div class="mt-3">
         @if (currentFilter == 0)
         {
             <p><strong>Total Inflow: </strong>@authStateService.GetAuthenticatedUser().Currency @totalInflow</p>
@@ -164,8 +136,8 @@
             <p><strong>Remaining Debt: </strong>@authStateService.GetAuthenticatedUser().Currency @remainingDebt</p>
         }
  </div>
-
 <table>
+    <!-- Transactions table -->
     <thead>
         <tr>
             <th>Title</th>
@@ -227,29 +199,26 @@
         }
     </tbody>
 </table>
-
 @code {
     private List<Transaction> transaction = new List<Transaction>();
-    private List<Transaction> filteredTransaction = new List<Transaction>();
-    private List<string> categories = new List<string>();
-    private string selectedCategory = string.Empty;
-    private string searchText = string.Empty;
-    private string? alertMessage;
-    private int currentFilter = 0;
+    private List<Transaction> filteredTransaction = new List<Transaction>();// Filtered transactions based on selected filters
+    private List<string> categories = new List<string>();// List of distinct categories
+    private string selectedCategory = string.Empty;// Selected category for filtering
+    private string searchText = string.Empty;// Search text for filtering
+    private string? alertMessage;// Alert message for error or success
+    private int currentFilter = 0;// default transaction type filter as inflow
     private int sortOrder = 0; // Default to "Descending" for latest transactions
     private decimal totalInflow;
     private decimal totalOutflow;
     private decimal totalDebt;
     private decimal paidDebt;
     private decimal remainingDebt;
-    private TransactionSummary summary;
+    private TransactionSummary summary;// Transaction summary object
+// New fields for date range filtering
+    private DateTime? fromDate;// Start date for filtering
+    private DateTime? toDate;// End date for filtering
 
-
-    // New fields for date range filtering
-    private DateTime? fromDate;
-    private DateTime? toDate;
-
-
+    // Load all transactions and categories
     private async Task LoadTransaction()
     {
         transaction = await transactionService.LoadTransactionAsync();
@@ -261,7 +230,7 @@
     {
         var transactions = await transactionService.LoadTransactionAsync();
         summary = summaryService.CalculateSummary(transactions);
-        transaction = transactions;
+        transaction = transactions;// Assign loaded transactions
 
         // Load categories
         categories = transaction.Select(t => t.Tag).Distinct().OrderBy(c => c).ToList();
@@ -311,7 +280,7 @@
     }
 
     private void ApplyFilters()
-    {
+    {    // Filter transactions based on selected filters (type, category, search text, date range)
         filteredTransaction = transaction
             .Where(t =>
                 (currentFilter == 0 && t.Type == "Inflow") ||
@@ -327,52 +296,57 @@
             .ToList();
 
         if (sortOrder == 0)
-        {
+        {   // Sort transactions based on selected order (Latest or Oldest)
             filteredTransaction = filteredTransaction.OrderByDescending(t => t.Date).ToList(); // Latest first
         }
         else
         {
             filteredTransaction = filteredTransaction.OrderBy(t => t.Date).ToList(); // Oldest first
         }
-
+        // Update summary with filtered transactions
         summary = summaryService.CalculateSummary(filteredTransaction);
-
         totalInflow = summary.TotalInflow;
         totalOutflow = summary.TotalOutflow;
         totalDebt = summary.TotalDebt;
         remainingDebt = summary.RemainingDebt;
         paidDebt = summary.PaidDebt;
     }
-
+    // Marks a debt as paid
     private async Task ClearDebt(Transaction transaction)
     {
+        var transactions = await transactionService.LoadTransactionAsync();
+        var summary = summaryService.CalculateSummary(transactions);
+        var balance = summary.AvailableBalance;
+
         if (transaction == null) return;
 
         transaction.IsPaid = true;
 
         try
-        {
-            // Update the database
-            await transactionService.UpdateTransactionAsync(transaction);
-            alertMessage = "Debt marked as paid";
-
-            // Update the local transaction list
-            var updatedTransaction = this.transaction.FirstOrDefault(t => t.TaskId == transaction.TaskId);
-            if (updatedTransaction != null)
+        {   // Ensure there is enough balance to clear the debt
+            if (transaction.Amount <= balance)
             {
-                updatedTransaction.IsPaid = true;
-            }
+                transaction.IsPaid = true;
+                // Update the database
+                await transactionService.UpdateTransactionAsync(transaction);
+                alertMessage = "Debt marked as paid";
 
-            ApplyFilters(); // Reapply filters to update the view
+                ApplyFilters(); // Reapply filters to update the view
+            }
+            else
+            {
+                transaction.IsPaid = false;
+                alertMessage = "Debt cannot be cleared!! Not enough inflow amount.";
+            }
         }
-        catch (Exception ex)
+    catch (Exception ex)
         {
             alertMessage = $"Error clearing debt: {ex.Message}";
         }
     }
- 
+
     private async Task DeleteTransaction(Guid transactionId)
-    {
+    {   // Delete a transaction
         try
         {
             await transactionService.DeleteTransactionAsync(transactionId);

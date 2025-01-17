@@ -6,50 +6,41 @@
 
 <style>
     .table {
-        background-color: #ffe6f0 !important; /* Light pink background for the table */
+        background-color: #ffe6f0 !important; 
         border-collapse: collapse;
         width: 100%;
     }
-
-        /* Table Header Styling */
         .table th {
-            background-color: #ff69b4 !important; /* Pink background for table header */
+            background-color: #ff69b4 !important;
             color: white;
         }
-
-    /* Table Row Styling */
     .table-striped tbody tr:nth-child(odd) {
-        background-color: #ffe6f0 !important; /* Light pink for odd rows */
+        background-color: #ffe6f0 !important; 
     }
-
     .table-striped tbody tr:nth-child(even) {
-        background-color: #ffccf2 !important; /* Slightly darker pink for even rows */
+        background-color: #ffccf2 !important; 
     }
-
-    /* Table Data Styling */
     .table td {
         padding: 10px;
         text-align: left;
     }
-
-    /* Button Styling */
     .btn-danger {
-        background-color: #ff4d94 !important; /* Darker pink for delete button */
+        background-color: #ff4d94 !important; 
         border-color: #ff4d94 !important;
     }
 
-        .btn-danger:hover {
-            background-color: #ff3385 !important; /* Even darker pink on hover */
-            border-color: #ff3385 !important;
-        }
+    .btn-danger:hover {
+        background-color: #ff3385 !important; 
+        border-color: #ff3385 !important;
+    }
 </style>
+
+<!-- Categories List Page  -->
 <h3>Categories List</h3>
-
-
 <div>
-    <button @onclick="NavigatetoAddCategory">Add Category</button>
+    <button @onclick="NavigatetoAddCategory">Add Category</button><!-- Button to navigate to the "Add Category" page -->
 </div>
-
+<!-- Table to display the list of categories -->
 <div class="container mt-5">
     <div class="table-responsive">
         <table class="table table-striped">
@@ -62,6 +53,7 @@
             <tbody>
                 @if (categories.Any())
                 {
+                    <!-- Loop through each category and display in a table row -->
                     @foreach (var category in categories)
                     {
                         <tr>
@@ -69,7 +61,7 @@
                             <td>
                                 <button class="btn btn-danger btn-sm" @onclick="() => DeleteCategory(category.CategoryId)">
                                     Delete
-                                </button>  <!-- Add any action buttons) -->
+                                </button>  
                             </td>
                         </tr>
                     }
@@ -86,31 +78,33 @@
 </div>
 
 @code {
+    // List that will contain categories loaded from the service
     private List<Category> categories = new List<Category>();
-
-    protected override async Task OnInitializedAsync()
+    
+    protected override async Task OnInitializedAsync()//Retrieve category data asynchronously when the component initializes.
     {
+        // Load the categories from the category service
         categories = await categoryService.LoadCategoriesAsync();
     }
-
-
+    // Method to delete a category
     private async Task DeleteCategory(Guid categoryId)
     {
         try
         {
-            var categoryToDelete = categories.FirstOrDefault(c => c.CategoryId == categoryId);
+            var categoryToDelete = categories.FirstOrDefault(c => c.CategoryId == categoryId); // Find the category in the category list by its ID
             if (categoryToDelete != null)
             {
-                categories.Remove(categoryToDelete);
-                await categoryService.SaveCategoriesAsync(categories);
-                categories = await categoryService.LoadCategoriesAsync();
+                categories.Remove(categoryToDelete); // Remove the category from the local list
+                await categoryService.SaveCategoriesAsync(categories);// Save the updated category list to the service
+                categories = await categoryService.LoadCategoriesAsync();// Reload the updated list of categories
             }
         }
-        catch (Exception ex)
+        catch (Exception ex)// Log any exceptions that occur during the deletion process
         {
             Console.WriteLine($"Error deleting category: {ex.Message}");
         }
     }
+    // Method to navigate to the "Add Category" page
     private void NavigatetoAddCategory()
     {
         NavigationManager.NavigateTo("add-category");

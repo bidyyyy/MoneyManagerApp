@@ -6,13 +6,15 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using MoneyManager.Models;
-
+using System.Runtime.CompilerServices;
 namespace MoneyManager.Services
+
 {
+    //to manage user operations such as saving, loading users, and password hashing.
     internal class UserService : IUserService
     {
-        private readonly string usersFilePath = Path.Combine(AppContext.BaseDirectory, "UserDetails.json");
-
+        private readonly string usersFilePath = Path.Combine(AppContext.BaseDirectory, "UserDetails.json");// Path for storing user details in a JSON file
+        // Asynchronously saves a new user by hashing their password before storing
         public async Task SaveUserAsync(User user)
         {
             try
@@ -23,7 +25,7 @@ namespace MoneyManager.Services
                 user.Password = HashPassword(user.Password);
 
                 users.Add(user);
-                await SaveUsersAsync(users);
+                await SaveUsersAsync(users);// Save the updated list of users to the file
             }
             catch (Exception ex)
             {
@@ -31,7 +33,7 @@ namespace MoneyManager.Services
                 throw;
             }
         }
-
+        // Asynchronously loads all users from the JSON file
         public async Task<List<User>> LoadUsersAsync()
         {
             try
@@ -60,7 +62,7 @@ namespace MoneyManager.Services
                 return new List<User>();
             }
         }
-
+        // Private  method to save the list of users to the file
         private async Task SaveUsersAsync(List<User> users)
         {
             try
@@ -80,8 +82,7 @@ namespace MoneyManager.Services
                 throw;
             }
         }
-
-        // Method to hash the password using SHA-256
+        // Private method to hash the user's password using SHA-256
         private string HashPassword(string password)
         {
             using (var sha256 = SHA256.Create())

@@ -123,6 +123,11 @@
             <p>@authStateService.GetAuthenticatedUser().Currency @totalBalance</p>
         </div>
         <div class="dashboard-item">
+            <h4>Total Debt: </h4>
+            <p>@authStateService.GetAuthenticatedUser().Currency @totalDebt</p>
+        </div>
+
+        <div class="dashboard-item">
             <h4>Total Number of Transactions: </h4>
             <p>@totalNumberofTransaction</p>
         </div>
@@ -274,5 +279,4 @@
         endDate = null;
         await LoadAndCalculateTotals();
     }
-
 }

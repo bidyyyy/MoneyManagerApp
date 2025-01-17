@@ -6,14 +6,12 @@
 @inject IUserService userService
 
 <style>
-    /* Global Styles */
     body {
         font-family: Arial, sans-serif;
         background-color: #f9f9f9;
         margin: 0;
         padding: 0;
     }
-
     .login-container {
         display: flex;
         justify-content: center;
@@ -21,7 +19,6 @@
         width: 100%;
         height: 100%;
     }
-    /* Login Form Container */
     form {
         background-color: #fff;
         padding: 20px;
@@ -30,16 +27,12 @@
         width: 100%;
         max-width: 400px;
     }
-
-    /* Form Heading */
     h3 {
         text-align: center;
         margin-bottom: 20px;
         font-size: 24px;
         color: #333;
     }
-
-    /* Input Fields */
     input[type="text"],
     input[type="password"],
     select {
@@ -50,8 +43,6 @@
         border-radius: 4px;
         font-size: 16px;
     }
-
-    /* Button */
     button {
         width: 100%;
         padding: 10px;
@@ -66,8 +57,6 @@
         button:hover {
             background-color: lightgrey;
         }
-
-    /* Link */
     a {
         text-decoration: none;
         color: #007bff;
@@ -76,8 +65,6 @@
         a:hover {
             text-decoration: underline;
         }
-
-    /* Error Message */
     .error-message {
         color: red;
         text-align: center;
@@ -85,7 +72,7 @@
     }
 
 </style>
-
+<!-- Login Form -->
 <div class="login-container">
 <form>
 
@@ -102,6 +89,7 @@
             <input type="password" @bind="password" />
         </div>
         <div>
+                <!-- Currency selection dropdown -->
             <label>Currency:</label>
             <select @bind="selectedCurrency">
                 @foreach (var currency in currencyOptions)
@@ -126,11 +114,12 @@
 }
 
 @code {
+    // Declare variables for form data and error handling
     private string username;
     private string password;
     private string errorMessage;
     private string selectedCurrency;
-
+    // List of currency options for selection
     private List<string> currencyOptions = new List<string>
     {
         "USD",
@@ -140,12 +129,14 @@
         "JPY",
         "INR"
     };
-
+    // Async method to handle user login
     private async Task LoginUser()
     {
         try
         {
+            // Load the list of users from the service
             var users = await userService.LoadUsersAsync();
+            // Find the user that matches the entered username and hashed password
             var user = users.FirstOrDefault(u => u.UserName == username && u.Password == HashPassword(password));
 
             if (user != null)
@@ -163,7 +154,7 @@
                 navigationManager.NavigateTo("/home");
             }
             else
-            {
+            {   // Set error message if the username or password is incorrect
                 errorMessage = "Invalid username or password.";
             }
         }
@@ -172,13 +163,14 @@
             errorMessage = $"An error occurred during login: {ex.Message}";
         }
     }
-
+    // Method to hash the password
     private string HashPassword(string password)
     {
         using (var sha256 = System.Security.Cryptography.SHA256.Create())
-        {
+        {   // Convert password to byte array and compute the hash
             var bytes = System.Text.Encoding.UTF8.GetBytes(password);
             var hash = sha256.ComputeHash(bytes);
+            // Return the hashed password as a Base64 string
             return Convert.ToBase64String(hash);
         }
     }

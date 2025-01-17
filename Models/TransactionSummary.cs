@@ -14,5 +14,7 @@ namespace MoneyManager.Models
         public decimal PaidDebt { get; set; }
         public decimal RemainingDebt { get; set; }
         public decimal TotalBalance { get; set; }
+        public decimal AvailableBalance { get; set; }
+
     }
 }

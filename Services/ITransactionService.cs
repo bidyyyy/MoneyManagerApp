@@ -9,13 +9,9 @@ namespace MoneyManager.Services
 {
     internal interface ITransactionService
     {
-
         Task SaveTransactionAsync(Transaction transactionItem);
         Task UpdateTransactionAsync(Transaction transactionItem);
-
         Task DeleteTransactionAsync(Guid transactionId);
-
-
         Task<List<Transaction>> LoadTransactionAsync();
     }
 }

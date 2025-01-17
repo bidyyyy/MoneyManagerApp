@@ -11,7 +11,6 @@ namespace MoneyManager.Services
     {
          
         Task SaveCategoryAsync(Category category);
-
         Task SaveCategoriesAsync(List<Category> categories);
         Task<List<Category>> LoadCategoriesAsync();
 
